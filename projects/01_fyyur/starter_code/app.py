@@ -28,12 +28,17 @@ migrate = Migrate(app, db)
 #----------------------------------------------------------------------------#
 # Models.
 #----------------------------------------------------------------------------#
-shows = db.Table('shows',
-    db.Column('id', db.Integer, primary_key=True),
-    db.Column('artist_id', db.Integer, db.ForeignKey('artists.id'), nullable=False),
-    db.Column('venue_id', db.Integer, db.ForeignKey('venues.id'), nullable=False),
-    db.Column('start_time', db.DateTime)
-)
+class Show(db.Model):
+    __tablename__ = 'shows'
+    id = db.Column(db.Integer, primary_key=True)
+    artist_id = db.Column(db.Integer, db.ForeignKey('artists.id'), nullable=False)
+    venue_id = db.Column(db.Integer, db.ForeignKey('venues.id'), nullable=False)
+    start_time = db.Column(db.DateTime)
+
+
+    artist = db.relationship('Artist', backref='shows')
+    venue = db.relationship('Venue', backref='shows')
+
 
 class Venue(db.Model):
     __tablename__ = 'venues'
@@ -51,9 +56,8 @@ class Venue(db.Model):
     seeking_description = db.Column(db.String())
 
     # relationships
-    artists = db.relationship('Artist', secondary=shows, backref=db.backref('venues', lazy=True))
-
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    artists = db.relationship('Artist', secondary='shows', backref=db.backref('venues', lazy=True))
+    # TODO DONE: implement any missing fields, as a database migration using Flask-Migrate
 
 class Artist(db.Model):
     __tablename__ = 'artists'
@@ -70,13 +74,10 @@ class Artist(db.Model):
     website_link = db.Column(db.String(120))
     looking_venue = db.Column(db.Boolean)
     seeking_description = db.Column(db.String())
-    
-    # relationships
-    artists = db.relationship('Venue', secondary=shows, backref=db.backref('artists', lazy=True))
 
-    # TODO: implement any missing fields, as a database migration using Flask-Migrate
+    # TODO DONE`: implement any missing fields, as a database migration using Flask-Migrate
 
-# TODO Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
+# TODO DONE Implement Show and Artist models, and complete all model relationships and properties, as a database migration.
 
 
     
@@ -112,27 +113,43 @@ def index():
 def venues():
   # TODO: replace with real venues data.
   #       num_upcoming_shows should be aggregated based on number of upcoming shows per venue.
-  data=[{
-    "city": "San Francisco",
-    "state": "CA",
-    "venues": [{
-      "id": 1,
-      "name": "The Musical Hop",
-      "num_upcoming_shows": 0,
-    }, {
-      "id": 3,
-      "name": "Park Square Live Music & Coffee",
-      "num_upcoming_shows": 1,
-    }]
-  }, {
-    "city": "New York",
-    "state": "NY",
-    "venues": [{
-      "id": 2,
-      "name": "The Dueling Pianos Bar",
-      "num_upcoming_shows": 0,
-    }]
-  }]
+
+  venues = Venue.query.all()
+  places = Venue.query.distinct(Venue.city,Venue.state).all()
+  data = []
+
+  for place in places: 
+    data.append({
+      "city": place.city,
+      "state": place.state,
+      "venues": [{
+        "id": venue.id,
+        "name": venue.name,
+        "num_upcoming_shows": len([show for show in venue.shows if show.start_time >= datetime.now()]),
+      } for venue in venues if venue.city == place.city and venue.state == place.state]
+    })
+
+  # data=[{
+  #   "city": "San Francisco",
+  #   "state": "CA",
+  #   "venues": [{
+  #     "id": 1,
+  #     "name": "The Musical Hop",
+  #     "num_upcoming_shows": 0,
+  #   }, {
+  #     "id": 3,
+  #     "name": "Park Square Live Music & Coffee",
+  #     "num_upcoming_shows": 1,
+  #   }]
+  # }, {
+  #   "city": "New York",
+  #   "state": "NY",
+  #   "venues": [{
+  #     "id": 2,
+  #     "name": "The Dueling Pianos Bar",
+  #     "num_upcoming_shows": 0,
+  #   }]
+  # }]
   return render_template('pages/venues.html', areas=data);
 
 @app.route('/venues/search', methods=['POST'])
