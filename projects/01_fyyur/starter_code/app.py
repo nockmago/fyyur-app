@@ -539,11 +539,11 @@ def create_show_submission():
   form = ShowForm(request.form)
 
   try: 
-    new_show = {
-      'artist_id': form['artist_id'].data,
-      'venue_id': form['venue_id'].data,
-      'start_time': form['start_time'].data
-    }
+    new_show = Show(
+      artist_id=form['artist_id'].data,
+      venue_id=form['venue_id'].data,
+      start_time=form['start_time'].data
+    )
 
     db.session.add(new_show)
     db.session.commit()
