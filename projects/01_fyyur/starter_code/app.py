@@ -201,7 +201,6 @@ def create_venue_submission():
   # TODO: insert form data as a new Venue record in the db, instead
   # Getting form data
   form = request.form.to_dict(flat=False)
-  print(form)
   try:
     seeking_talent=False
     if 'seeking_talent' in form: 
@@ -219,6 +218,7 @@ def create_venue_submission():
       looking_talent=seeking_talent,
       seeking_description = form['seeking_description']
     )
+    print(new_venue.name)
     db.session.add(new_venue)
     db.session.commit()
     flash('Venue ' + request.form['name'] + ' was successfully listed!')
